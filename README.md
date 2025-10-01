@@ -32,7 +32,7 @@ src/
 
 ## 🚀 Démarrage rapide
 
-### 1. Installation des dépendances
+### 1. Installation des dépendances (runtime)
 
 ```bash
 pip install -r requirements.txt
@@ -41,7 +41,7 @@ pip install -r requirements.txt
 ### 2. Lancement du serveur
 
 ```bash
-python run_server.py
+python src/main.py
 ```
 
 Le serveur démarre sur `http://localhost:8000`
@@ -56,7 +56,7 @@ Le serveur démarre sur `http://localhost:8000`
 ### Option 1: Script automatisé
 
 ```bash
-python test_integration.py
+./run_tests.sh --integration
 ```
 
 ### Option 2: Tests manuels avec curl
@@ -64,7 +64,7 @@ python test_integration.py
 #### 1. Inscription
 
 ```bash
-curl -X POST "http://localhost:8000/api/register" \
+curl -X POST "http://localhost:8000/register" \
      -H "Content-Type: application/json" \
      -d '{"email": "test@example.com", "password": "motdepasse123"}'
 ```
@@ -79,7 +79,7 @@ curl -X POST "http://localhost:8000/api/register" \
 #### 2. Activation
 
 ```bash
-curl -X POST "http://localhost:8000/api/activate" \
+curl -X POST "http://localhost:8000/activate" \
      -H "Content-Type: application/json" \
      -d '{"activation_code": "1234"}'
 ```
@@ -92,7 +92,7 @@ curl -X POST "http://localhost:8000/api/activate" \
 #### 3. Authentification (Basic Auth)
 
 ```bash
-curl -X GET "http://localhost:8000/api/me" \
+curl -X GET "http://localhost:8000/me" \
      -H "Authorization: Basic dGVzdEBleGFtcGxlLmNvbTptb3RkZXBhc3NlMTIz"
 ```
 
@@ -109,11 +109,11 @@ curl -X GET "http://localhost:8000/api/me" \
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
-| POST | `/api/register` | Inscription utilisateur | ❌ |
-| POST | `/api/activate` | Activation avec code à 4 chiffres | ❌ |
-| POST | `/api/resend-code` | Renvoyer le code d'activation | ❌ |
-| GET | `/api/me` | Informations utilisateur connecté | ✅ Basic Auth |
-| GET | `/api/health` | Status de l'API | ❌ |
+| POST | `/register` | Inscription utilisateur | ❌ |
+| POST | `/activate` | Activation avec code à 4 chiffres | ❌ |
+| POST | `/resend-code` | Renvoyer le code d'activation | ❌ |
+| GET | `/me` | Informations utilisateur connecté | ✅ Basic Auth |
+| GET | `/health` | Status de l'API | ❌ |
 
 ## 🔧 Configuration
 
@@ -140,6 +140,31 @@ Mailer = SMTPMailer(
 
 ## 🛠️ Développement
 
+### Dépendances de développement (formatteurs/lint)
+
+Installe les outils de dev (formatteurs) sans les dépendances de test:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+Ou, si tu veux tout pour les tests et le formatage dans un même environnement:
+
+```bash
+pip install -r requirements.txt
+pip install -r requirements-test.txt
+```
+
+### Formater le code
+
+```bash
+# Trier les imports
+isort .
+
+# Formater le code
+black .
+```
+
 ### Structure synchrone
 
 L'API utilise une architecture **synchrone** car :
@@ -157,7 +182,13 @@ Les données sont stockées en mémoire pour la simplicité :
 
 ## 🧪 Tests
 
-Le fichier `test_integration.py` teste le workflow complet :
+Exécuter la suite de tests avec couverture:
+
+```bash
+./run_tests.sh
+```
+
+Le fichier `tests/test_integration.py` teste le workflow complet :
 
 1. ✅ Health check
 2. ✅ Inscription utilisateur  
@@ -173,7 +204,7 @@ Authorization: Basic <base64(email:password)>
 
 ### Codes d'activation
 - **Format** : 4 chiffres (ex: 1234)
-- **Expiration** : 15 minutes
+- **Expiration** : 1 minute
 - **Unicité** : Garantie par le repository
 
 ### Sécurité
