@@ -146,6 +146,27 @@ Mailer = SMTPMailer(
 
 ## 🛠️ Développement
 
+### Architecture Repository Pattern
+
+**Structure des repositories :**
+```
+src/persistances/repositories/
+├── interfaces.py                           # Abstractions pures
+└── implementations/
+    ├── postgresql_*.py                     # Production (PostgreSQL)
+    └── memory/                             # Tests/Demos (In-Memory)
+```
+
+**Configuration flexible :**
+```python
+# Production : PostgreSQL (défaut)
+from src.di.container import get_container
+container = get_container()  # use_postgresql=True par défaut
+
+# Tests : In-Memory
+container = AppContainer(use_postgresql=False)
+```
+
 ### Dépendances de développement (formatteurs/lint)
 
 Installe les outils de dev (formatteurs) sans les dépendances de test:
@@ -216,27 +237,53 @@ L'API utilise une architecture **synchrone** car :
 - ✅ Performance suffisante pour un test
 - ✅ Code plus lisible et maintenable
 
-### Repositories in-memory
+### **Repository Pattern avec PostgreSQL**
 
-Les données sont stockées en mémoire pour la simplicité :
-- `UserRepository` : Gestion des utilisateurs
-- `ActivationCodeRepository` : Gestion des codes temporaires
-- Auto-nettoyage des codes expirés
+L'application utilise de **vraies implémentations PostgreSQL** en production :
+- `PostgreSQLUserRepository` : CRUD SQL pour les utilisateurs
+- `PostgreSQLActivationCodeRepository` : Gestion SQL des codes d'activation
+- **Persistance réelle** : Les données survivent aux redémarrages
+- **Implémentations in-memory** : Disponibles pour tests rapides
+- Auto-nettoyage des codes expirés (SQL `DELETE WHERE expires_at < NOW()`)
 
 ## 🧪 Tests
 
-Exécuter la suite de tests avec couverture:
+L'application utilise une **architecture de tests à deux niveaux** :
 
+### Tests Unitaires (Rapides)
 ```bash
+# Tests in-memory ultra-rapides (~2s)
+pytest -m unit
+```
+
+### Tests d'Intégration (Complets)
+```bash
+# Tests avec PostgreSQL (~2s)
+pytest -m integration
+```
+
+### Tous les Tests
+```bash
+# Exécution complète
+pytest
+
+# Ou avec le script
 ./run_tests.sh
 ```
 
-Le fichier `tests/test_integration.py` teste le workflow complet :
+### **📊 Couverture Actuelle**
+- **21 tests** au total
+- **12 tests unitaires** (in-memory, logique métier)
+- **9 tests d'intégration** (PostgreSQL, API complète)
 
-1. ✅ Health check
-2. ✅ Inscription utilisateur
-3. ✅ Activation avec code
-4. ✅ Authentification Basic Auth
+Voir **[TESTING.md](TESTING.md)** pour la documentation complète de la stratégie de tests.
+
+### **Scénarios Validés**
+1. ✅ Inscription utilisateur + code d'activation
+2. ✅ Activation avec codes 4 chiffres (1 minute)
+3. ✅ Authentification Basic Auth
+4. ✅ Gestion des erreurs et cas limites
+5. ✅ Repository Pattern (PostgreSQL + in-memory)
 
 ## 📝 Notes techniques
 

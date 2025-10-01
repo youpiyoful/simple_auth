@@ -5,6 +5,11 @@ import uuid
 from dataclasses import dataclass, field
 
 
+def utc_now() -> datetime.datetime:
+    """Get current UTC datetime with timezone info."""
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
 @dataclass
 class User:
     """Represents a user in the authentication system."""
@@ -13,7 +18,7 @@ class User:
     password_hash: str
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     is_active: bool = False
-    created_at: datetime.datetime = field(default_factory=datetime.datetime.now)
+    created_at: datetime.datetime = field(default_factory=utc_now)
 
 
 @dataclass
@@ -22,7 +27,7 @@ class ActivationCode:
 
     user_id: str
     code: str
-    created_at: datetime.datetime = field(default_factory=datetime.datetime.now)
+    created_at: datetime.datetime = field(default_factory=utc_now)
     expires_at: datetime.datetime | None = field(default=None)
 
     def __post_init__(self) -> None:
@@ -35,4 +40,12 @@ class ActivationCode:
         """Check if the activation code has expired."""
         if self.expires_at is None:
             return False
-        return datetime.datetime.now() > self.expires_at
+
+        now = utc_now()
+        expires_at = self.expires_at
+
+        # Handle timezone-naive expires_at by assuming UTC
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=datetime.timezone.utc)
+
+        return now > expires_at

@@ -1,14 +1,25 @@
-"""Integration tests for Simple Auth API endpoints."""
+"""Integration tests for Simple Auth API endpoints.
+
+These tests use real PostgreSQL database to test end-to-end functionality.
+They are slower than unit tests but validate the complete system behavior.
+
+Requirements:
+- Docker must be running
+- PostgreSQL container must be available (docker-compose up -d db)
+"""
 
 import base64
 import json
 import time
+import uuid
 
+import pytest
 from fastapi.testclient import TestClient
 
 from src.main import app
 
 
+@pytest.mark.integration
 class TestAPIIntegration:
     """Integration tests for the complete API workflow."""
 
@@ -19,7 +30,8 @@ class TestAPIIntegration:
     def test_complete_user_registration_flow(self):
         """Test the complete user registration and activation flow."""
         # Given
-        user_data = {"email": "integration@example.com", "password": "password123"}
+        unique_email = f"integration-{uuid.uuid4().hex[:8]}@example.com"
+        user_data = {"email": unique_email, "password": "password123"}
 
         # Step 1: Register user
         response = self.client.post("/register", json=user_data)
@@ -40,10 +52,10 @@ class TestAPIIntegration:
         assert response.status_code == 401
 
         # Step 3: Get activation code (in real app, this would be from email)
-        # For test, we need to access the code from the system
-        from src.di.container import get_container
+        # For integration tests, we use PostgreSQL explicitly
+        from src.di.container import AppContainer
 
-        container = get_container()
+        container = AppContainer(use_postgresql=True, use_mock_email=True)
         activation_repo = container.activation_code_repository()
 
         # Get user ID from registration response
@@ -69,7 +81,8 @@ class TestAPIIntegration:
     def test_duplicate_registration_security(self):
         """Test that duplicate registrations don't reveal user existence."""
         # Given
-        user_data = {"email": "duplicate@example.com", "password": "password123"}
+        unique_email = f"duplicate-{uuid.uuid4().hex[:8]}@example.com"
+        user_data = {"email": unique_email, "password": "password123"}
 
         # First registration
         response1 = self.client.post("/register", json=user_data)
@@ -98,25 +111,33 @@ class TestAPIIntegration:
         assert "Invalid activation code" in response.json()["detail"]
 
     def test_expired_activation_code(self):
-        """Test activation with expired code (simulated)."""
-        # Given - register user
-        user_data = {"email": "expired@example.com", "password": "password123"}
+        """Test that expired activation codes are rejected."""
+        # Given
+        unique_email = f"expired-{uuid.uuid4().hex[:8]}@example.com"
+        user_data = {"email": unique_email, "password": "password123"}
         response = self.client.post("/register", json=user_data)
         user_id = response.json()["user_id"]
 
         # Get and manually expire the activation code
-        from src.di.container import get_container
+        from src.di.container import AppContainer
 
-        container = get_container()
+        container = AppContainer(use_postgresql=True, use_mock_email=True)
         activation_repo = container.activation_code_repository()
 
         activation_code = activation_repo.get_by_user_id(user_id)
         assert activation_code is not None
 
-        # Expire the code
+        # Expire the code in database
         import datetime
 
-        activation_code.expires_at = datetime.datetime.now() - datetime.timedelta(seconds=1)
+        from src.persistances.db import get_db_cursor
+
+        expired_time = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=1)
+        with get_db_cursor() as cursor:
+            cursor.execute(
+                "UPDATE activation_codes SET expires_at = %s WHERE user_id = %s",
+                (expired_time, user_id),
+            )
 
         # When - try to activate with expired code
         activation_data = {"activation_code": activation_code.code}
@@ -129,14 +150,15 @@ class TestAPIIntegration:
     def test_authentication_endpoints(self):
         """Test authentication with various scenarios."""
         # Setup: Create and activate user
-        user_data = {"email": "auth@example.com", "password": "password123"}
+        unique_email = f"auth-{uuid.uuid4().hex[:8]}@example.com"
+        user_data = {"email": unique_email, "password": "password123"}
         response = self.client.post("/register", json=user_data)
         user_id = response.json()["user_id"]
 
         # Activate user
-        from src.di.container import get_container
+        from src.di.container import AppContainer
 
-        container = get_container()
+        container = AppContainer(use_postgresql=True, use_mock_email=True)
         activation_repo = container.activation_code_repository()
         activation_code = activation_repo.get_by_user_id(user_id)
         assert activation_code is not None
@@ -155,7 +177,9 @@ class TestAPIIntegration:
         assert response.status_code == 401
 
         # Test 3: Non-existent user
-        fake_auth = self._create_basic_auth_header("fake@example.com", "password")
+        # Test with fake credentials
+        fake_email = f"fake-{uuid.uuid4().hex[:8]}@example.com"
+        fake_auth = self._create_basic_auth_header(fake_email, "password")
         response = self.client.get("/me", headers={"Authorization": fake_auth})
         assert response.status_code == 404
 
@@ -172,7 +196,9 @@ class TestAPIIntegration:
         assert response.status_code == 422
 
         # Test 2: Missing fields
-        response = self.client.post("/register", json={"email": "test@example.com"})
+        # Test missing password
+        test_email = f"test-{uuid.uuid4().hex[:8]}@example.com"
+        response = self.client.post("/register", json={"email": test_email})
         assert response.status_code == 422
 
         # Test 3: Invalid email format
@@ -188,16 +214,17 @@ class TestAPIIntegration:
     def test_one_minute_expiration_requirement(self):
         """Test the specific 1-minute expiration requirement from client specs."""
         # Given - register user
-        user_data = {"email": "timing@example.com", "password": "password123"}
+        unique_email = f"timing-{uuid.uuid4().hex[:8]}@example.com"
+        user_data = {"email": unique_email, "password": "password123"}
         start_time = time.time()
 
         response = self.client.post("/register", json=user_data)
         user_id = response.json()["user_id"]
 
         # Get activation code timing
-        from src.di.container import get_container
+        from src.di.container import AppContainer
 
-        container = get_container()
+        container = AppContainer(use_postgresql=True, use_mock_email=True)
         activation_repo = container.activation_code_repository()
 
         activation_code = activation_repo.get_by_user_id(user_id)

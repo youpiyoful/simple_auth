@@ -3,6 +3,12 @@ set -e
 
 echo "🧪 Simple Auth API - Test Suite"
 echo "================================"
+echo ""
+echo "Usage:"
+echo "  ./run_tests.sh           # All tests (unit + integration)"
+echo "  ./run_tests.sh --unit    # Unit tests only (fast, ~2s)"
+echo "  ./run_tests.sh --integration # Integration tests only (PostgreSQL, ~2s)"
+echo ""
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -30,9 +36,17 @@ pip install -r requirements.txt
 print_info "Installing test dependencies..."
 pip install -r requirements-test.txt
 
-# Run tests with coverage
-print_info "Running test suite with coverage..."
-python -m pytest tests/ -v --cov=src --cov-report=html --cov-report=term-missing
+# Handle different test modes
+if [ "$1" = "--unit" ]; then
+    print_info "Running unit tests only (fast, in-memory)..."
+    python -m pytest -m unit -v --cov=src --cov-report=html --cov-report=term-missing
+elif [ "$1" = "--integration" ]; then
+    print_info "Running integration tests only (PostgreSQL)..."
+    python -m pytest -m integration -v --cov=src --cov-report=html --cov-report=term-missing
+else
+    print_info "Running complete test suite with coverage..."
+    python -m pytest -v --cov=src --cov-report=html --cov-report=term-missing
+fi
 
 if [ $? -eq 0 ]; then
     print_success "All tests passed!"
@@ -40,17 +54,6 @@ if [ $? -eq 0 ]; then
 else
     print_error "Some tests failed!"
     exit 1
-fi
-
-# Optional: Run specific test categories
-if [ "$1" = "--integration" ]; then
-    print_info "Running integration tests..."
-    python -m pytest tests/ -v -k "integration"
-fi
-
-if [ "$1" = "--unit" ]; then
-    print_info "Running unit tests only..."
-    python -m pytest tests/ -v -k "not integration"
 fi
 
 echo ""

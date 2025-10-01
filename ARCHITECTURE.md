@@ -4,6 +4,8 @@
 
 L'API Simple Auth est une application d'authentification moderne construite avec **FastAPI** et **PostgreSQL**, implémentant un système d'activation d'utilisateurs par email avec codes à 4 chiffres et expiration de **1 minute** (spécification client).
 
+**🔄 Architecture Repository Pattern** : L'application utilise de vraies implémentations PostgreSQL en production, avec des implémentations in-memory disponibles pour les tests et démos.
+
 ---
 
 ## 🏗️ Architecture Générale
@@ -48,6 +50,27 @@ L'API Simple Auth est une application d'authentification moderne construite avec
 
 ---
 
+## 🏗️ Architecture Repository Pattern
+
+### **Séparation Interface/Implémentation**
+
+```
+src/persistances/repositories/
+├── interfaces.py                           # Abstractions pures
+└── implementations/
+    ├── postgresql_user_repository.py       # Production SQL
+    ├── postgresql_activation_code_repository.py
+    └── memory/                             # Tests/Démos
+        ├── user_repository.py
+        └── activation_code_repository.py
+```
+
+**Avantages :**
+- 🔄 **Interchangeabilité** : PostgreSQL ⟷ In-Memory via configuration
+- 🧪 **Testabilité** : Tests rapides sans base de données
+- 🛡️ **Découplage** : Services indépendants de la persistance
+- ⚡ **Flexibilité** : Ajout facile de nouvelles implémentations (Redis, MongoDB...)
+
 ## 🔗 Couches et Responsabilités
 
 ### **1. API Layer**
@@ -63,13 +86,18 @@ L'API Simple Auth est une application d'authentification moderne construite avec
   - Gestion des codes d'expiration (1 minute)
 
 ### **3. Persistence Layer**
-- **UserRepository**: CRUD operations utilisateurs
-- **ActivationCodeRepository**: Gestion des codes d'activation
+- **Interfaces**: Contrats abstraits pour toutes les opérations
+- **PostgreSQL Implementations**: Vraies requêtes SQL pour production
+  - `PostgreSQLUserRepository`: CRUD operations utilisateurs
+  - `PostgreSQLActivationCodeRepository`: Gestion des codes d'activation
+- **In-Memory Implementations**: Stockage RAM pour tests/démos
 - **EmailClient**: Interface pour envoi d'emails (mock/SMTP)
 
 ### **4. Data Layer**
-- **PostgreSQL**: Base de données avec connexions poolées
+- **PostgreSQL 18**: Base de données avec connexions poolées
 - **Tables**: users, activation_codes avec contraintes et indexes
+- **SQL Queries**: Vraies requêtes SQL dans les repositories PostgreSQL
+- **Transactions**: Gestion automatique via context managers
 
 ---
 
@@ -79,9 +107,11 @@ L'API Simple Auth est une application d'authentification moderne construite avec
 ┌─────────────────────────────────────────────────────────────┐
 │                   AppContainer                             │
 │  ┌─────────────────────────────────────────────────────────│
-│  │  RepositoryProvider                                     │
-│  │   ├── UserRepository                                   │
-│  │   └── ActivationCodeRepository                         │
+│  │  RepositoryProvider (configurable)                     │
+│  │   ├── PostgreSQLUserRepository        (Production)     │
+│  │   ├── PostgreSQLActivationCodeRepo    (Production)     │
+│  │   ├── InMemoryUserRepository          (Tests)          │
+│  │   └── InMemoryActivationCodeRepo      (Tests)          │
 │  │                                                        │
 │  │  InfrastructureProvider                                │
 │  │   └── EmailClient (Mock/SMTP)                          │
@@ -92,9 +122,24 @@ L'API Simple Auth est une application d'authentification moderne construite avec
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### **Configuration Flexible**
+```python
+# Production (défaut) - PostgreSQL
+container = AppContainer(use_postgresql=True)
+
+# Tests rapides - In-Memory
+container = AppContainer(use_postgresql=False)
+
+# Environment spécifique
+container = AppContainer(
+    use_postgresql=True,
+    use_mock_email=True
+)
+```
+
 **Avantages:**
-- **Testabilité**: Mock facile des dépendances
-- **Flexibilité**: Changement d'implémentation sans modification du code
+- **Testabilité**: Mock facile + implémentations in-memory dédiées
+- **Flexibilité**: Basculement PostgreSQL/Memory via config
 - **Maintenabilité**: Séparation claire des responsabilités
 
 ---
@@ -266,7 +311,55 @@ curl http://localhost:8000/health
 
 ---
 
-## 📊 Métriques et Couverture
+## �️ Implémentation PostgreSQL Détaillée
+
+### **Requêtes SQL Réelles**
+
+```sql
+-- Création utilisateur (PostgreSQLUserRepository)
+INSERT INTO users (id, email, password_hash, is_active, created_at)
+VALUES (%s, %s, %s, %s, %s) RETURNING *;
+
+-- Création code d'activation (PostgreSQLActivationCodeRepository)
+INSERT INTO activation_codes (user_id, code, created_at, expires_at)
+VALUES (%s, %s, NOW(), NOW() + INTERVAL '1 minute') RETURNING *;
+
+-- Nettoyage automatique des codes expirés
+DELETE FROM activation_codes WHERE expires_at < NOW();
+```
+
+### **Gestion des Connexions**
+```python
+# Context manager pour les curseurs
+with get_db_cursor() as cursor:
+    cursor.execute(query, params)
+    return cursor.fetchone()
+    # Commit automatique, fermeture auto
+```
+
+### **Avantages Implémentation PostgreSQL**
+- ✅ **Persistance réelle** : Données conservées après redémarrage
+- ✅ **Performance** : Requêtes optimisées avec indexes
+- ✅ **Transactions** : Cohérence garantie des données
+- ✅ **Contraintes DB** : Validation au niveau base
+- ✅ **Concurrence** : Gestion multi-utilisateurs
+- ✅ **Expiration SQL** : `NOW() + INTERVAL '1 minute'` natif
+
+### **Configuration Flexible**
+```python
+# Production - PostgreSQL
+container = AppContainer(use_postgresql=True)    # Défaut
+
+# Tests unitaires - In-Memory (rapide)
+container = AppContainer(use_postgresql=False)
+
+# Tests d'intégration - PostgreSQL + Mock Email
+container = AppContainer(use_postgresql=True, use_mock_email=True)
+```
+
+---
+
+## �📊 Métriques et Couverture
 
 - **Tests**: 21 tests (12 unitaires + 9 intégration)
 - **Couverture**: 73% du code source
