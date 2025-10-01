@@ -96,7 +96,7 @@ docker compose -f docker-compose.dev.yaml up  ✅
 
 # Services validés
 ✅ API FastAPI      (port 8000) - Opérationnel
-✅ PostgreSQL 18    (port 5432) - Base initialisée  
+✅ PostgreSQL 18    (port 5432) - Base initialisée
 ✅ PgAdmin         (port 5050) - Interface admin
 ✅ Mailpit SMTP    (port 8025) - Mock email server
 ```
@@ -104,7 +104,7 @@ docker compose -f docker-compose.dev.yaml up  ✅
 ### Endpoints API Fonctionnels
 ```bash
 ✅ POST /register   - 201 Created
-✅ POST /activate   - 200 OK  
+✅ POST /activate   - 200 OK
 ✅ GET /me          - 200 OK (avec Basic Auth)
 ✅ GET /health      - 200 OK
 ✅ GET /docs        - Documentation interactive
@@ -122,7 +122,7 @@ docker compose -f docker-compose.dev.yaml up  ✅
 - [x] **Authentification Basic Auth** fonctionnelle
 - [x] **API REST** complète et documentée
 
-### ✅ Technique  
+### ✅ Technique
 - [x] **FastAPI** dernière version stable
 - [x] **PostgreSQL 18** avec schéma optimisé
 - [x] **Docker Compose** environnement complet
@@ -161,7 +161,7 @@ docker compose -f docker-compose.dev.yaml up  ✅
 # 1. Démarrer l'environnement
 docker compose -f docker-compose.dev.yaml up
 
-# 2. Valider les tests  
+# 2. Valider les tests
 ./run_tests.sh
 
 # 3. Tester l'API manuellement
@@ -173,7 +173,7 @@ open http://localhost:8000/docs
 
 **📁 Fichiers clés à examiner:**
 - `ARCHITECTURE.md` - Documentation technique complète
-- `tests/` - Suite de tests exhaustive  
+- `tests/` - Suite de tests exhaustive
 - `src/services/models.py:37` - Implémentation expiration 1 minute
 - `docker-compose.dev.yaml` - Infrastructure complète
 

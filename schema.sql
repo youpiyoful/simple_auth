@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS activation_codes (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     used_at TIMESTAMP WITH TIME ZONE NULL,
-    
+
     -- Ensure one active code per user
     UNIQUE(user_id)
 );
@@ -51,10 +51,10 @@ RETURNS INTEGER AS $$
 DECLARE
     deleted_count INTEGER;
 BEGIN
-    DELETE FROM activation_codes 
-    WHERE expires_at < CURRENT_TIMESTAMP 
+    DELETE FROM activation_codes
+    WHERE expires_at < CURRENT_TIMESTAMP
     AND used_at IS NULL;
-    
+
     GET DIAGNOSTICS deleted_count = ROW_COUNT;
     RETURN deleted_count;
 END;
