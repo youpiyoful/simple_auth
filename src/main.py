@@ -1,7 +1,9 @@
 """Main entry point for the FastAPI application."""
 
 import logging
+
 from fastapi import FastAPI
+
 from src.api.server import create_app
 
 # Configuration du logging
@@ -10,4 +12,3 @@ logging.basicConfig(
 )
 
 app: FastAPI = create_app()
-
