@@ -55,7 +55,7 @@ L'API Simple Auth est une application d'authentification moderne construite avec
 - **Error Handlers**: Gestion centralisée des exceptions
 - **Dependencies**: Injection de dépendances, authentification Basic Auth
 
-### **2. Service Layer** 
+### **2. Service Layer**
 - **UserService**: Logique métier principale
   - Registration avec vérification d'existence
   - Activation avec validation de codes à 4 chiffres
@@ -114,11 +114,11 @@ class User:
 
 ### **ActivationCode Model**
 ```python
-@dataclass  
+@dataclass
 class ActivationCode:
     user_id: str           # Référence vers User
     code: str              # Code 4 chiffres (ex: "1234")
-    created_at: datetime   # Timestamp de création  
+    created_at: datetime   # Timestamp de création
     expires_at: datetime   # Expiration: created_at + 1 minute
 ```
 
@@ -165,7 +165,7 @@ def register(email: str, password: str) -> User | None:
 }
 ```
 
-### **POST /activate** 
+### **POST /activate**
 ```json
 {
   "activation_code": "1234"
@@ -183,7 +183,7 @@ def register(email: str, password: str) -> User | None:
 ```json
 {
   "id": "uuid-here",
-  "email": "user@example.com", 
+  "email": "user@example.com",
   "is_active": true
 }
 ```
@@ -206,7 +206,7 @@ def register(email: str, password: str) -> User | None:
 ```yaml
 services:
   api:          # FastAPI application
-  postgres:     # PostgreSQL 18 database  
+  postgres:     # PostgreSQL 18 database
   pgadmin:      # Database management UI
   mailpit:      # SMTP server mock pour dev
 ```
@@ -222,7 +222,7 @@ services:
 
 ### **Requirements Validés ✓**
 1. **Framework**: FastAPI ✓
-2. **Base de données**: PostgreSQL ✓  
+2. **Base de données**: PostgreSQL ✓
 3. **Registration**: Email + mot de passe ✓
 4. **Activation**: Code 4 chiffres ✓
 5. **Expiration**: 1 minute ✓
@@ -282,7 +282,7 @@ curl http://localhost:8000/health
 - Rate limiting sur les endpoints
 - Logs structurés (JSON)
 
-### **Long terme**  
+### **Long terme**
 - OAuth2/OIDC intégration
 - Multi-factor authentication (2FA)
 - Cache Redis pour les sessions

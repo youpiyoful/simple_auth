@@ -100,7 +100,7 @@ curl -X GET "http://localhost:8000/me" \
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
-  "email": "test@example.com", 
+  "email": "test@example.com",
   "is_active": true
 }
 ```
@@ -212,7 +212,7 @@ make hooks-autofix
 
 L'API utilise une architecture **synchrone** car :
 - ✅ Plus simple pour ce cas d'usage
-- ✅ Pas de complexité async inutile 
+- ✅ Pas de complexité async inutile
 - ✅ Performance suffisante pour un test
 - ✅ Code plus lisible et maintenable
 
@@ -234,7 +234,7 @@ Exécuter la suite de tests avec couverture:
 Le fichier `tests/test_integration.py` teste le workflow complet :
 
 1. ✅ Health check
-2. ✅ Inscription utilisateur  
+2. ✅ Inscription utilisateur
 3. ✅ Activation avec code
 4. ✅ Authentification Basic Auth
 

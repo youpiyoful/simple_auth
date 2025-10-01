@@ -23,7 +23,7 @@ src/config/
 Organisent les dépendances par domaine :
 
 - **RepositoryProvider** : Couche de persistance
-- **ServiceProvider** : Couche métier  
+- **ServiceProvider** : Couche métier
 - **InfrastructureProvider** : Services externes (email, etc.)
 
 ### 2. **Container** (`src/di/container.py`)
@@ -123,7 +123,7 @@ def cleanup_expired_codes():
 ### **Provider Pattern**
 Chaque provider encapsule la création d'un domaine spécifique.
 
-### **Singleton Pattern**  
+### **Singleton Pattern**
 `SingletonProvider` garantit une seule instance par container.
 
 ### **Factory Pattern**
@@ -148,7 +148,7 @@ class DatabaseProvider:
         return create_connection(get_settings().database_settings.url)
 ```
 
-### **Cache Provider** 
+### **Cache Provider**
 ```python
 class CacheProvider:
     def get_redis_client(self) -> Redis:
