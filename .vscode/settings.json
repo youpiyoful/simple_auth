@@ -1,0 +1,23 @@
+{
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.extraPaths": [ // Set the path to the root of the workspace to improve the accuracy of the type checking.
+        "./src"
+    ],
+    "python.autoComplete.extraPaths": [ // Set the path to the root of the workspace to improve the accuracy of the auto-completion.
+        "./src"
+    ],
+
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "pylint.ignorePatterns": [
+        "**/tests/*",
+    ],
+    "github.copilot.enable": {
+        "plaintext": true,
+        "scminput": true,
+        "markdown": true
+    },
+    "files.associations": {
+        "*.sql": "postgresql"
+    }
+}
