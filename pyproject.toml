@@ -1,0 +1,36 @@
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.black]
+line-length = 100
+
+[tool.pylint]
+ignore-patterns = [".*/tests/.*"]
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+    "C0301", # line-too-long
+    "C0302", # too-many-lines
+    "W0622", # redefined-builtin
+    "W0621", # redefined-outer-name
+]
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.pytest.ini_options]
+pythonpath = ["api", "services", "persistence"]
+env = [
+    "APP_ENV=test",
+    # PostgreSQL pour simple_auth
+    "DATABASE_HOST=user_db",
+    "DATABASE_PORT=5432",
+    "DATABASE_NAME=users",
+    "DATABASE_USER=postgres",
+    "DATABASE_PASSWORD=postgres",
+    # SMTP mock
+    "SMTP_HOST=smtp_mock",
+    "SMTP_PORT=1025",
+    "SMTP_API=http://smtp_mock:8025"
+]
