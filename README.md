@@ -171,6 +171,43 @@ isort .
 black .
 ```
 
+### Raccourcis Makefile (optionnels)
+
+```bash
+# Préparer .env si absent
+make env
+
+# Lancer en local
+make dev
+
+# Docker
+make build
+make up
+make down
+make logs
+
+# Tests
+make test
+make unit
+make integration
+
+# Formatage
+make fmt
+make fmt-check
+```
+
+### Hooks pre-commit (optionnel)
+
+```bash
+# Installer les hooks
+pip install -r requirements-dev.txt
+make hooks-install
+
+# Vérifier/auto-corriger
+make hooks-run
+make hooks-autofix
+```
+
 ### Structure synchrone
 
 L'API utilise une architecture **synchrone** car :
