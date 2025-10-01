@@ -5,23 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "API user - Debug (Python)",
+            "name": "Simple Auth - Debug (Python)",
             "type": "debugpy",
             "request": "launch",
-            "program": "main.py",
-            "env": {
-                "APP_ENV": "local",
-                "PORT": "8001",
-                "AUTO_RELOAD": "false",
-                "DB_HOST": "db",
-                "DB_PORT": "5432",
-                "DB_USER": "app",
-                "DB_PASS": "secret",
-                "DB_NAME": "appdb",
-                "SMTP_HOST": "smtp",
-                "SMTP_PORT": "1025",
-            },
-            "console": "internalConsole",
+            "program": "${workspaceFolder}/run_server.py",
+            "envFile": "${workspaceFolder}/.env",
+            "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "justMyCode": true
         }
