@@ -1,0 +1,49 @@
+# Simple Auth API - Production Docker Compose Configuration
+# This file defines the complete application stack for production deployment
+
+services:
+  # FastAPI application service
+  api:
+    build: .                          # Build from local Dockerfile
+    container_name: user_api
+    ports:
+      - "8000:8000"                   # Expose API on port 8000
+    env_file: .env                    # Load environment variables from .env file
+    depends_on:
+      db:
+        condition: service_healthy    # Wait for database to be ready
+      smtp:
+        condition: service_started    # Wait for SMTP service to start
+    restart: unless-stopped           # Auto-restart on failure (except manual stop)
+
+  # PostgreSQL database service
+  db:
+    image: postgres:18                # Use PostgreSQL version 18
+    container_name: user_db
+    environment:
+      POSTGRES_USER: ${DB_USER}       # Database user from .env
+      POSTGRES_PASSWORD: ${DB_PASS}   # Database password from .env
+      POSTGRES_DB: ${DB_NAME}         # Database name from .env
+    ports:
+      - "5432:5432"                   # Expose PostgreSQL on standard port
+    volumes:
+      - postgres_data:/var/lib/postgresql/data                    # Persistent data storage
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-init.sql:ro  # Auto-initialize schema on first run
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"] # Check if PostgreSQL accepts connections
+      interval: 5s                    # Check every 5 seconds
+      timeout: 5s                     # Timeout after 5 seconds
+      retries: 5                      # Retry 5 times before marking as unhealthy
+    restart: unless-stopped           # Auto-restart on failure
+
+  # SMTP mock service for email testing
+  smtp:
+    image: mailhog/mailhog            # Lightweight SMTP server with web UI
+    container_name: smtp_mock
+    ports:
+      - "8025:8025"                   # Web UI for viewing emails
+      - "1025:1025"                   # SMTP server port
+
+# Named volumes for persistent data storage
+volumes:
+  postgres_data:                      # PostgreSQL data persistence across container restarts

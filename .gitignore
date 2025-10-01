@@ -135,7 +135,12 @@ celerybeat.pid
 *.sage.py
 
 # Environments
+# Do not commit real .env files. Use .env.example instead.
 .env
+.env.local
+.env.*.local
+.env.*
+!.env.example
 .envrc
 .venv
 env/

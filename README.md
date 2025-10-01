@@ -117,6 +117,12 @@ curl -X GET "http://localhost:8000/me" \
 
 ## 🔧 Configuration
 
+> Note importante sur les fichiers d'environnement
+>
+> - Le fichier `.env` n'est **pas** versionné. À la place, on fournit **`.env.example`** avec des valeurs de démonstration.
+> - Pour faciliter les tests reviewers: le **Dockerfile copie `.env.example` vers `.env`** automatiquement si `.env` est absent. Ainsi `docker compose up` fonctionne out‑of‑the‑box.
+> - En local hors Docker: crée ton `.env` avec `cp .env.example .env` et personnalise si besoin.
+
 ### Email (Développement)
 
 Par défaut, l'API utilise un `MockMailer` qui affiche les codes d'activation dans la console.
