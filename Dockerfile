@@ -13,4 +13,4 @@ COPY . .
 RUN if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env; fi
 
 # Lancer l’app FastAPI avec uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
