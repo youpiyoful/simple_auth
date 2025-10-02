@@ -70,9 +70,12 @@ Le serveur démarre sur `http://localhost:8000`
 #### 1. Inscription
 
 ```bash
-curl -X POST "http://localhost:8000/register" \
-     -H "Content-Type: application/json" \
-     -d '{"email": "test@example.com", "password": "motdepasse123"}'
+curl -X POST "http://localhost:8000/api/v1/users" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "password123"
+  }'
 ```
 
 **Réponse :**
@@ -85,9 +88,11 @@ curl -X POST "http://localhost:8000/register" \
 #### 2. Activation
 
 ```bash
-curl -X POST "http://localhost:8000/activate" \
-     -H "Content-Type: application/json" \
-     -d '{"activation_code": "1234"}'
+curl -X PATCH "http://localhost:8000/api/v1/users/{user_id}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "activation_code": "1234"
+  }'
 ```
 
 **Réponse :**
@@ -98,8 +103,8 @@ curl -X POST "http://localhost:8000/activate" \
 #### 3. Authentification (Basic Auth)
 
 ```bash
-curl -X GET "http://localhost:8000/me" \
-     -H "Authorization: Basic dGVzdEBleGFtcGxlLmNvbTptb3RkZXBhc3NlMTIz"
+curl -X GET "http://localhost:8000/api/v1/users/me" \
+  -H "Authorization: Basic $(echo -n 'test@example.com:password123' | base64)"
 ```
 
 **Réponse :**
@@ -115,11 +120,11 @@ curl -X GET "http://localhost:8000/me" \
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
-| POST | `/register` | Inscription utilisateur | ❌ |
-| POST | `/activate` | Activation avec code à 4 chiffres | ❌ |
-| POST | `/resend-code` | Renvoyer le code d'activation | ❌ |
-| GET | `/me` | Informations utilisateur connecté | ✅ Basic Auth |
-| GET | `/health` | Status de l'API | ❌ |
+| POST | `/api/v1/users` | Inscription utilisateur | ❌ |
+| PATCH | `/api/v1/users/{id}` | Activation avec code à 4 chiffres | ❌ |
+| POST | `/api/v1/users/{id}/codes` | Renvoyer le code d'activation | ❌ |
+| GET | `/api/v1/users/me` | Informations utilisateur connecté | ✅ Basic Auth |
+| GET | `/api/v1/health` | Status de l'API | ❌ |
 
 ## 🔧 Configuration
 

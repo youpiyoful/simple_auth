@@ -8,11 +8,11 @@
 |--------------------------|------------|-------------------|------------|
 | **FastAPI Framework** | ✅ **VALIDÉ** | FastAPI 0.100+ avec routes REST | `src/main.py`, `src/api/` |
 | **PostgreSQL Database** | ✅ **VALIDÉ** | PostgreSQL 18 + connexion poolée | `docker-compose.yaml`, `src/persistances/db.py` |
-| **Email + Password Registration** | ✅ **VALIDÉ** | Validation Pydantic + bcrypt hash | `POST /register` endpoint |
+| **Email + Password Registration** | ✅ **VALIDÉ** | Validation Pydantic + bcrypt hash | `POST /api/v1/users` endpoint |
 | **4-digit Activation Code** | ✅ **VALIDÉ** | Codes 0000-9999 générés aléatoirement | `src/persistances/repositories/implementations/*activation_code_repository.py` |
 | **🔥 1 minute expiration** | ✅ **VALIDÉ** | `timedelta(minutes=1)` exact | `src/services/models.py:37` + test spécifique |
 | **Basic Authentication** | ✅ **VALIDÉ** | RFC 7617 compliant avec bcrypt | `src/api/deps.py` |
-| **REST API Endpoints** | ✅ **VALIDÉ** | 4 endpoints complets | `/register`, `/activate`, `/me`, `/health` |
+| **REST API Endpoints** | ✅ **VALIDÉ** | 5 endpoints RESTful | `/api/v1/users`, `/api/v1/users/{id}`, `/api/v1/users/{id}/codes`, `/api/v1/users/me`, `/api/v1/health` |
 | **Unit Testing** | ✅ **VALIDÉ** | 21 tests (12 unitaires + 9 intégration) | `tests/` directory |
 | **Docker Environment** | ✅ **VALIDÉ** | Multi-service avec DB, API, SMTP mock | `docker-compose.yaml` |
 | **Architecture Schema** | ✅ **VALIDÉ** | Documentation détaillée + diagrammes | `ARCHITECTURE.md` |
@@ -103,10 +103,11 @@ docker compose -f docker-compose.dev.yaml up  ✅
 
 ### Endpoints API Fonctionnels
 ```bash
-✅ POST /register   - 201 Created
-✅ POST /activate   - 200 OK
-✅ GET /me          - 200 OK (avec Basic Auth)
-✅ GET /health      - 200 OK
+✅ POST /api/v1/users           - 201 Created
+✅ PATCH /api/v1/users/{id}      - 200 OK
+✅ POST /api/v1/users/{id}/codes - 200 OK
+✅ GET /api/v1/users/me         - 200 OK (avec Basic Auth)
+✅ GET /api/v1/health           - 200 OK
 ✅ GET /docs        - Documentation interactive
 ```
 
@@ -166,7 +167,7 @@ docker compose -f docker-compose.dev.yaml up
 ./run_tests.sh
 
 # 3. Tester l'API manuellement
-curl http://localhost:8000/health
+curl http://localhost:8000/api/v1/health
 
 # 4. Consulter la documentation (et tester les endpoints)
 open http://localhost:8000/docs

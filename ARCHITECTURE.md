@@ -88,7 +88,7 @@ src/persistances/repositories/
 ## 🔗 Couches et Responsabilités
 
 ### **1. API Layer**
-- **FastAPI Routes**: Endpoints REST (/register, /activate, /me, /health)
+- **FastAPI Routes**: Endpoints REST (/api/v1/users, /api/v1/users/{id}, /api/v1/users/me, /api/v1/health)
 - **Error Handlers**: Gestion centralisée des exceptions
 - **Dependencies**: Injection de dépendances, authentification Basic Auth
 
@@ -184,7 +184,7 @@ Dans les routes FastAPI:
 ```python
 from src.api.deps import get_user_service
 
-@router.post("/register")
+@router.post("/api/v1/users")
 def register(req: RegisterRequest, user_service: UserService = Depends(get_user_service)):
   return user_service.register(req.email, req.password)
 ```
@@ -250,7 +250,7 @@ def register(email: str, password: str) -> User | None:
 
 ## 🌐 API Endpoints
 
-### **POST /register**
+### **POST /api/v1/users**
 ```json
 {
   "email": "user@example.com",
@@ -265,7 +265,7 @@ def register(email: str, password: str) -> User | None:
 }
 ```
 
-### **POST /activate**
+### **PATCH /api/v1/users/{id}**
 ```json
 {
   "activation_code": "1234"
@@ -278,7 +278,7 @@ def register(email: str, password: str) -> User | None:
 }
 ```
 
-### **GET /me** (Basic Auth Required)
+### **GET /api/v1/users/me** (Basic Auth Required)
 **Response 200:**
 ```json
 {
@@ -361,7 +361,7 @@ pip install -r requirements-test.txt
 docker compose up -d
 
 # Health check
-curl http://localhost:8000/health
+curl http://localhost:8000/api/v1/health
 ```
 
 ---

@@ -12,7 +12,7 @@ from src.services.exceptions import (  # InvalidCredentials,
 from src.services.models import User
 from src.services.user_service import UserService
 
-router = APIRouter(tags=["auth"])
+router = APIRouter(tags=["users"])
 
 
 # Pydantic models for request/response
@@ -56,18 +56,28 @@ class RegisterResponse(BaseModel):
     user_id: str | None = None
 
 
+class ActivateUserRequest(BaseModel):
+    """Request model for user activation."""
+
+    activation_code: str
+
+
+class ResendCodeByIdRequest(BaseModel):
+    """Request model for resending activation code by user ID."""
+
+    email: EmailStr
+
+
 # Dependency injection is handled in src/api/deps.py
 
 
-@router.post("/register", response_model=RegisterResponse, status_code=201)
-def register(
-    request: RegisterRequest, user_service: UserService = Depends(dependency=get_user_service)
+# POST /api/v1/users - Create a new user
+@router.post("/api/v1/users", response_model=RegisterResponse, status_code=201)
+def create_user(
+    request: RegisterRequest, user_service: UserService = Depends(get_user_service)
 ) -> RegisterResponse:
-    """Register a new user and send activation email."""
-    # Toujours retourner le même message pour éviter l'énumération d'emails
+    """Create a new user and send activation email."""
     user = user_service.register(email=request.email, password=request.password)
-
-    # Si l'utilisateur est créé, retourner son ID pour les tests
     user_id = user.id if user is not None else None
 
     return RegisterResponse(
@@ -76,12 +86,16 @@ def register(
     )
 
 
-@router.post("/activate", response_model=MessageResponse)
-def activate_account(
-    request: ActivationRequest, user_service: UserService = Depends(dependency=get_user_service)
+# PATCH /api/v1/users/{id} - Activate a user
+@router.patch("/api/v1/users/{user_id}", response_model=MessageResponse)
+def activate_user(
+    user_id: str,
+    request: ActivateUserRequest,
+    user_service: UserService = Depends(get_user_service),
 ) -> MessageResponse:
-    """Activate user account with 4-digit code."""
+    """Activate user account with activation code."""
     try:
+        # Note: user_id is in path but service uses code-based lookup
         user_service.activate_account(activation_code=request.activation_code)
         return MessageResponse(message="Account activated successfully.")
     except InvalidActivationCode as e:
@@ -92,12 +106,16 @@ def activate_account(
         raise HTTPException(status_code=404, detail=str(e)) from e
 
 
-@router.post("/resend-code", response_model=MessageResponse)
-def resend_activation_code(
-    request: ResendCodeRequest, user_service: UserService = Depends(dependency=get_user_service)
+# POST /api/v1/users/{id}/codes - Generate or resend activation code
+@router.post("/api/v1/users/{user_id}/codes", response_model=MessageResponse)
+def generate_or_resend_code(
+    user_id: str,
+    request: ResendCodeByIdRequest,
+    user_service: UserService = Depends(get_user_service),
 ) -> MessageResponse:
-    """Resend activation code to user email."""
+    """Generate or resend activation code to user email."""
     try:
+        # RESTful: user_id in path, email in body for service compatibility
         success = user_service.resend_activation_code(email=request.email)
         if success:
             return MessageResponse(message="Activation code sent to your email.")
@@ -107,15 +125,17 @@ def resend_activation_code(
         raise HTTPException(status_code=404, detail=str(e)) from e
 
 
-@router.get("/me", response_model=UserResponse)
-def get_user_info(current_user: User = Depends(dependency=get_current_user)) -> UserResponse:
+# GET /api/v1/users/me - Get current user profile
+@router.get("/api/v1/users/me", response_model=UserResponse)
+def get_user_me(current_user: User = Depends(get_current_user)) -> UserResponse:
     """Get current user info using Basic Auth."""
     return UserResponse(
         id=current_user.id, email=current_user.email, is_active=current_user.is_active
     )
 
 
-@router.get("/health")
+# GET /api/v1/health - Health check endpoint
+@router.get("/api/v1/health")
 def health_check() -> dict[str, str | dict[str, str | dict[str, str]]]:
     """Complete health check endpoint with container status."""
     container_health: dict[str, str | dict[str, str]] = get_container_health()

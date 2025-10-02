@@ -34,7 +34,7 @@ class TestAPIIntegration:
         user_data = {"email": unique_email, "password": "password123"}
 
         # Step 1: Register user
-        response = self.client.post("/register", json=user_data)
+        response = self.client.post("/api/v1/users", json=user_data)
 
         # Then
         assert response.status_code == 201
@@ -47,7 +47,7 @@ class TestAPIIntegration:
 
         # Step 2: Try to access protected endpoint before activation (should fail)
         auth_header = self._create_basic_auth_header(user_data["email"], user_data["password"])
-        response = self.client.get("/me", headers={"Authorization": auth_header})
+        response = self.client.get("/api/v1/users/me", headers={"Authorization": auth_header})
 
         assert response.status_code == 401
 
@@ -63,15 +63,15 @@ class TestAPIIntegration:
         activation_code = activation_repo.get_by_user_id(user_id)
         assert activation_code is not None
 
-        # Step 4: Activate account
+        # Step 4: Activate account with new RESTful endpoint (using dummy user_id)
         activation_data = {"activation_code": activation_code.code}
-        response = self.client.post("/activate", json=activation_data)
+        response = self.client.patch(f"/api/v1/users/{user_id}", json=activation_data)
 
         assert response.status_code == 200
         assert response.json()["message"] == "Account activated successfully."
 
         # Step 5: Now access protected endpoint (should succeed)
-        response = self.client.get("/me", headers={"Authorization": auth_header})
+        response = self.client.get("/api/v1/users/me", headers={"Authorization": auth_header})
 
         assert response.status_code == 200
         user_info = response.json()
@@ -85,11 +85,11 @@ class TestAPIIntegration:
         user_data = {"email": unique_email, "password": "password123"}
 
         # First registration
-        response1 = self.client.post("/register", json=user_data)
+        response1 = self.client.post("/api/v1/users", json=user_data)
         assert response1.status_code == 201
 
         # Second registration with same email
-        response2 = self.client.post("/register", json=user_data)
+        response2 = self.client.post("/api/v1/users", json=user_data)
 
         # Should return same response (security measure)
         assert response2.status_code == 201
@@ -103,8 +103,8 @@ class TestAPIIntegration:
         # Given
         invalid_data = {"activation_code": "9999"}
 
-        # When
-        response = self.client.post("/activate", json=invalid_data)
+        # When - using dummy user ID since we don't have a real one
+        response = self.client.patch("/api/v1/users/dummy-id", json=invalid_data)
 
         # Then
         assert response.status_code == 400
@@ -115,7 +115,7 @@ class TestAPIIntegration:
         # Given
         unique_email = f"expired-{uuid.uuid4().hex[:8]}@example.com"
         user_data = {"email": unique_email, "password": "password123"}
-        response = self.client.post("/register", json=user_data)
+        response = self.client.post("/api/v1/users", json=user_data)
         user_id = response.json()["user_id"]
 
         # Get and manually expire the activation code
@@ -141,7 +141,7 @@ class TestAPIIntegration:
 
         # When - try to activate with expired code
         activation_data = {"activation_code": activation_code.code}
-        response = self.client.post("/activate", json=activation_data)
+        response = self.client.patch(f"/api/v1/users/{user_id}", json=activation_data)
 
         # Then
         assert response.status_code == 400
@@ -152,7 +152,7 @@ class TestAPIIntegration:
         # Setup: Create and activate user
         unique_email = f"auth-{uuid.uuid4().hex[:8]}@example.com"
         user_data = {"email": unique_email, "password": "password123"}
-        response = self.client.post("/register", json=user_data)
+        response = self.client.post("/api/v1/users", json=user_data)
         user_id = response.json()["user_id"]
 
         # Activate user
@@ -164,51 +164,51 @@ class TestAPIIntegration:
         assert activation_code is not None
 
         activation_data = {"activation_code": activation_code.code}
-        self.client.post("/activate", json=activation_data)
+        self.client.patch(f"/api/v1/users/{user_id}", json=activation_data)
 
         # Test 1: Valid authentication
         auth_header = self._create_basic_auth_header(user_data["email"], user_data["password"])
-        response = self.client.get("/me", headers={"Authorization": auth_header})
+        response = self.client.get("/api/v1/users/me", headers={"Authorization": auth_header})
         assert response.status_code == 200
 
         # Test 2: Invalid password
         wrong_auth = self._create_basic_auth_header(user_data["email"], "wrong_password")
-        response = self.client.get("/me", headers={"Authorization": wrong_auth})
+        response = self.client.get("/api/v1/users/me", headers={"Authorization": wrong_auth})
         assert response.status_code == 401
 
         # Test 3: Non-existent user
         # Test with fake credentials
         fake_email = f"fake-{uuid.uuid4().hex[:8]}@example.com"
         fake_auth = self._create_basic_auth_header(fake_email, "password")
-        response = self.client.get("/me", headers={"Authorization": fake_auth})
+        response = self.client.get("/api/v1/users/me", headers={"Authorization": fake_auth})
         assert response.status_code == 404
 
         # Test 4: Malformed auth header
-        response = self.client.get("/me", headers={"Authorization": "Invalid Header"})
+        response = self.client.get("/api/v1/users/me", headers={"Authorization": "Invalid Header"})
         assert response.status_code == 401
 
     def test_api_error_responses(self):
         """Test API error handling and response formats."""
         # Test 1: Invalid JSON
         response = self.client.post(
-            "/register", content="invalid json", headers={"content-type": "application/json"}
+            "/api/v1/users", content="invalid json", headers={"content-type": "application/json"}
         )
         assert response.status_code == 422
 
         # Test 2: Missing fields
         # Test missing password
         test_email = f"test-{uuid.uuid4().hex[:8]}@example.com"
-        response = self.client.post("/register", json={"email": test_email})
+        response = self.client.post("/api/v1/users", json={"email": test_email})
         assert response.status_code == 422
 
         # Test 3: Invalid email format
         response = self.client.post(
-            "/register", json={"email": "invalid-email", "password": "pass"}
+            "/api/v1/users", json={"email": "invalid-email", "password": "pass"}
         )
         assert response.status_code == 422
 
         # Test 4: Missing activation code
-        response = self.client.post("/activate", json={})
+        response = self.client.patch("/api/v1/users/dummy-id", json={})
         assert response.status_code == 422
 
     def test_one_minute_expiration_requirement(self):
@@ -218,7 +218,7 @@ class TestAPIIntegration:
         user_data = {"email": unique_email, "password": "password123"}
         start_time = time.time()
 
-        response = self.client.post("/register", json=user_data)
+        response = self.client.post("/api/v1/users", json=user_data)
         user_id = response.json()["user_id"]
 
         # Get activation code timing
@@ -271,9 +271,9 @@ class TestAPIDocumentation:
 
         # Verify required endpoints are documented
         paths = openapi_spec["paths"]
-        assert "/register" in paths
-        assert "/activate" in paths
-        assert "/me" in paths
+        assert "/api/v1/users" in paths
+        assert "/api/v1/users/me" in paths
+        assert "/api/v1/health" in paths
 
     def test_swagger_ui_available(self):
         """Test that Swagger UI is available."""

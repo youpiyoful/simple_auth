@@ -72,8 +72,7 @@ class SimpleConnectionPool:
             self._pool.closeall()
 
 
-# Global pool instance
-_pool = SimpleConnectionPool()
+# No need for extra layer - SimpleConnectionPool is already a singleton
 
 
 @contextmanager
@@ -86,9 +85,10 @@ def get_db_cursor():  # -> Generator[Any, Any, None]:
             results = cursor.fetchall()  # Returns list of dicts
     """
     conn = None
+    pool = SimpleConnectionPool()  # Singleton - always returns the same instance
     try:
         # Get connection from pool (singleton)
-        conn = _pool.get_connection()
+        conn = pool.get_connection()
         cursor = conn.cursor()
 
         yield cursor
@@ -104,4 +104,4 @@ def get_db_cursor():  # -> Generator[Any, Any, None]:
     finally:
         # Return connection to pool (pas fermée, réutilisée!)
         if conn:
-            _pool.put_connection(conn)
+            pool.put_connection(conn)
