@@ -37,13 +37,24 @@ class MockMailer:
 
 
 class SMTPMailer:
-    """SMTP email client for production use."""
+    """SMTP email client for production use.
 
-    def __init__(self, smtp_server: str, smtp_port: int, username: str, password: str) -> None:
+    Supports optional TLS and optional AUTH (for tools like MailHog).
+    """
+
+    def __init__(
+        self,
+        smtp_server: str,
+        smtp_port: int,
+        username: str,
+        password: str,
+        use_tls: bool = True,
+    ) -> None:
         self.smtp_server: str = smtp_server
         self.smtp_port: int = smtp_port
         self.username: str = username
         self.password: str = password
+        self.use_tls: bool = use_tls
 
     def send_activation_email(self, to_email: str, activation_code: str) -> bool:
         """Send activation email using SMTP."""
@@ -87,8 +98,16 @@ class SMTPMailer:
 
             # Send email
             with smtplib.SMTP(host=self.smtp_server, port=self.smtp_port) as server:
-                server.starttls()
-                server.login(user=self.username, password=self.password)
+                # Optional TLS (MailHog typically doesn't support TLS)
+                if self.use_tls:
+                    try:
+                        server.starttls()
+                    except smtplib.SMTPException:
+                        # If TLS fails (e.g., MailHog), continue without TLS
+                        pass
+                # Optional AUTH (MailHog doesn't require auth)
+                if self.username:
+                    server.login(user=self.username, password=self.password)
                 server.send_message(msg=message)
 
             logger.info("Activation email sent successfully to %s", to_email)

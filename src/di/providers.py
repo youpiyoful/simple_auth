@@ -4,6 +4,9 @@ from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
 
 # Infrastructure imports
+from config.settings import AppSettings, SMTPSettings
+from persistances.repositories.implementations.memory.user_repository import InMemoryUserRepository
+from src.config.settings import get_settings
 from src.persistances.email_client import MockMailer, SMTPMailer
 
 # Repository implementations
@@ -11,6 +14,7 @@ from src.persistances.repositories.implementations import (
     PostgreSQLActivationCodeRepository,
     PostgreSQLUserRepository,
 )
+from src.persistances.repositories.implementations.memory import InMemoryActivationCodeRepository
 
 # Repository interfaces
 from src.persistances.repositories.interfaces import (
@@ -35,7 +39,7 @@ class Provider(ABC, Generic[T]):
 class SingletonProvider(Provider[T]):
     """Provider that ensures singleton behavior."""
 
-    def __init__(self, factory_func):
+    def __init__(self, factory_func) -> None:
         self._factory = factory_func
         self._instance = None
 
@@ -48,8 +52,8 @@ class SingletonProvider(Provider[T]):
 class RepositoryProvider:
     """Provider for repository layer dependencies."""
 
-    def __init__(self, use_postgresql: bool = True):
-        self._use_postgresql = use_postgresql
+    def __init__(self, use_postgresql: bool = True) -> None:
+        self._use_postgresql: bool = use_postgresql
         self._user_repository = SingletonProvider(self._create_user_repository)
         self._activation_code_repository = SingletonProvider(
             self._create_activation_code_repository
@@ -60,8 +64,6 @@ class RepositoryProvider:
         if self._use_postgresql:
             return PostgreSQLUserRepository()
         else:
-            from src.persistances.repositories.implementations.memory import InMemoryUserRepository
-
             return InMemoryUserRepository()
 
     def _create_activation_code_repository(self) -> ActivationCodeRepositoryInterface:
@@ -69,10 +71,6 @@ class RepositoryProvider:
         if self._use_postgresql:
             return PostgreSQLActivationCodeRepository()
         else:
-            from src.persistances.repositories.implementations.memory import (
-                InMemoryActivationCodeRepository,
-            )
-
             return InMemoryActivationCodeRepository()
 
     def get_user_repository(self) -> UserRepositoryInterface:
@@ -87,21 +85,33 @@ class RepositoryProvider:
 class InfrastructureProvider:
     """Provider for infrastructure layer dependencies."""
 
-    def __init__(self, use_mock_email: bool = True):
-        self._use_mock_email = use_mock_email
+    def __init__(self, use_mock_email: bool = True) -> None:
+        self._use_mock_email: bool = use_mock_email
         self._email_client = SingletonProvider(self._create_email_client)
 
-    def _create_email_client(self):
+    def _create_email_client(self) -> MockMailer | SMTPMailer:
         """Factory for email client."""
         if self._use_mock_email:
             return MockMailer()
         else:
-            # Configuration SMTP pour production
+            # SMTP configuration via settings (allows using MailHog or real SMTP)
+            settings: AppSettings = get_settings()
+            smtp: SMTPSettings | None = settings.smtp_settings
+            if smtp is None:
+                # Fallback sensible if settings not provided
+                return SMTPMailer(
+                    smtp_server="smtp.gmail.com",
+                    smtp_port=587,
+                    username="",
+                    password="",
+                    use_tls=True,
+                )
             return SMTPMailer(
-                smtp_server="smtp.gmail.com",
-                smtp_port=587,
-                username="your-email@gmail.com",
-                password="your-app-password",
+                smtp_server=smtp.server,
+                smtp_port=smtp.port,
+                username=smtp.username,
+                password=smtp.password,
+                use_tls=smtp.use_tls,
             )
 
     def get_email_client(self):
@@ -116,9 +126,9 @@ class ServiceProvider:
         self,
         repository_provider: RepositoryProvider,
         infrastructure_provider: InfrastructureProvider,
-    ):
-        self._repository_provider = repository_provider
-        self._infrastructure_provider = infrastructure_provider
+    ) -> None:
+        self._repository_provider: RepositoryProvider = repository_provider
+        self._infrastructure_provider: InfrastructureProvider = infrastructure_provider
         self._user_service = SingletonProvider(self._create_user_service)
 
     def _create_user_service(self) -> UserService:
