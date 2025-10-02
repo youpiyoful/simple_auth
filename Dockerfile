@@ -9,8 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copier le code
 COPY . .
 
-# Provide a default .env by copying .env.example if .env is absent
-RUN if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env; fi
+# Do not bake a .env into the image; rely on docker-compose-provided env
 
 # Lancer l’app FastAPI avec uvicorn
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

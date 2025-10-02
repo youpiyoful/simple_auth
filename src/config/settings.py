@@ -139,14 +139,3 @@ def get_settings() -> AppSettings:
 def reset_settings() -> None:
     """Reset settings (useful for testing)."""
     SettingsManager.reset_settings()
-
-
-# Legacy compatibility (deprecated)
-DB_USER: str = os.environ.get("DB_USER", "app")
-DB_PASS: str = os.environ.get("DB_PASS", "secret")
-DB_NAME: str = os.environ.get("DB_NAME", "appdb")
-DB_HOST: str = os.environ.get("DB_HOST", "db")
-DB_PORT = int(os.environ.get("DB_PORT", "5432"))
-
-SMTP_HOST: str = os.environ.get("SMTP_HOST", "smtp")
-SMTP_PORT = int(os.environ.get("SMTP_PORT", "1025"))

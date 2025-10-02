@@ -7,16 +7,26 @@ from contextlib import contextmanager
 import psycopg2
 from psycopg2 import extras, pool
 
+from src.config.settings import get_settings
+
 
 def get_database_url() -> str:
-    """Get database URL from environment variables."""
-    return (
-        f"postgresql://{os.getenv('DB_USER', 'app')}:"
-        f"{os.getenv('DB_PASS', 'secret')}@"
-        f"{os.getenv('DB_HOST', 'localhost')}:"
-        f"{os.getenv('DB_PORT', '5432')}/"
-        f"{os.getenv('DB_NAME', 'appdb')}"
-    )
+    """Get database URL from centralized application settings."""
+    settings = get_settings()
+    db = settings.database_settings
+    # db is populated in AppSettings.from_env, but add a safe fallback
+    if db is None:
+        # Late load from env to avoid None
+        from src.config.settings import DatabaseSettings
+
+        db = DatabaseSettings(
+            user=os.getenv("DB_USER", "app"),
+            password=os.getenv("DB_PASS", "secret"),
+            name=os.getenv("DB_NAME", "appdb"),
+            host=os.getenv("DB_HOST", "db"),
+            port=int(os.getenv("DB_PORT", "5432")),
+        )
+    return db.url
 
 
 class SimpleConnectionPool:

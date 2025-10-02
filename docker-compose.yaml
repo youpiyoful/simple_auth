@@ -8,6 +8,8 @@ services:
     container_name: user_api
     ports:
       - "8000:8000"                   # Expose API on port 8000
+    environment:
+      DB_HOST: db                     # Force Docker network hostname for Postgres
     env_file: .env                    # Load environment variables from .env file
     depends_on:
       db:
