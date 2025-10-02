@@ -4,9 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
 
 # Infrastructure imports
-from config.settings import AppSettings, SMTPSettings
-from persistances.repositories.implementations.memory.user_repository import InMemoryUserRepository
-from src.config.settings import get_settings
+from src.config.settings import AppSettings, SMTPSettings, get_settings
 from src.persistances.email_client import MockMailer, SMTPMailer
 
 # Repository implementations
@@ -15,6 +13,9 @@ from src.persistances.repositories.implementations import (
     PostgreSQLUserRepository,
 )
 from src.persistances.repositories.implementations.memory import InMemoryActivationCodeRepository
+from src.persistances.repositories.implementations.memory.user_repository import (
+    InMemoryUserRepository,
+)
 
 # Repository interfaces
 from src.persistances.repositories.interfaces import (
