@@ -177,11 +177,11 @@ class TestAPIIntegration:
         assert response.status_code == 401
 
         # Test 3: Non-existent user
-        # Test with fake credentials
+        # Test with fake credentials - should return 401 (not 404) for Basic Auth security
         fake_email = f"fake-{uuid.uuid4().hex[:8]}@example.com"
         fake_auth = self._create_basic_auth_header(fake_email, "password")
         response = self.client.get("/api/v1/users/me", headers={"Authorization": fake_auth})
-        assert response.status_code == 404
+        assert response.status_code == 401  # All auth failures return 401 for Basic Auth
 
         # Test 4: Malformed auth header
         response = self.client.get("/api/v1/users/me", headers={"Authorization": "Invalid Header"})

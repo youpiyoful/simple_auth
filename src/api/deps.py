@@ -47,12 +47,12 @@ def get_current_user(
     try:
         user: User = user_service.authenticate_basic(authorization_header=authorization)
         return user
-    except InvalidCredentials as e:
+    except (InvalidCredentials, UserNotFound) as e:
+        # All authentication failures should return 401 with WWW-Authenticate header
+        # to trigger browser's Basic Auth prompt
         raise HTTPException(
-            status_code=401, detail=str(e), headers={"WWW-Authenticate": "Basic"}
+            status_code=401, detail="Invalid credentials", headers={"WWW-Authenticate": "Basic"}
         ) from e
-    except UserNotFound as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 def require_active_user(current_user: User = Depends(dependency=get_current_user)) -> User:
