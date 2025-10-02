@@ -6,6 +6,20 @@ L'API Simple Auth est une application d'authentification moderne construite avec
 
 **🔄 Architecture Repository Pattern** : L'application utilise de vraies implémentations PostgreSQL en production, avec des implémentations in-memory disponibles pour les tests et démos.
 
+## 🧭 Sommaire
+
+- Architecture générale
+- Architecture Repository Pattern
+- Dependency Injection (DI)
+- Couches et responsabilités
+- Modèle de données
+- Sécurité
+- API Endpoints
+- Déploiement et infrastructure
+- Implémentation PostgreSQL
+- Métriques et couverture
+- Évolutions possibles
+
 ---
 
 ## 🏗️ Architecture Générale
@@ -103,22 +117,38 @@ src/persistances/repositories/
 
 ## 💉 Dependency Injection Architecture
 
+L’architecture DI (injection de dépendances) sépare clairement la création/gestion des dépendances de leur utilisation.
+
+```
+src/di/
+├── __init__.py          # Exports publics du module
+├── container.py         # Container principal d'injection (AppContainer)
+└── providers.py         # Providers par domaine (repo, services, infra)
+
+src/api/
+└── deps.py              # Adaptateurs FastAPI/HTTP (Depends)
+
+src/config/
+└── settings.py          # Configuration centralisée
+```
+
+Schéma runtime (simplifié):
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                   AppContainer                             │
-│  ┌─────────────────────────────────────────────────────────│
-│  │  RepositoryProvider (configurable)                     │
-│  │   ├── PostgreSQLUserRepository        (Production)     │
-│  │   ├── PostgreSQLActivationCodeRepo    (Production)     │
-│  │   ├── InMemoryUserRepository          (Tests)          │
-│  │   └── InMemoryActivationCodeRepo      (Tests)          │
-│  │                                                        │
-│  │  InfrastructureProvider                                │
-│  │   └── EmailClient (Mock/SMTP)                          │
-│  │                                                        │
-│  │  ServiceProvider                                       │
-│  │   └── UserService                                      │
-│  └─────────────────────────────────────────────────────────│
+│                   AppContainer                              │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │  RepositoryProvider (configurable)                      ││
+│  │   ├── PostgreSQLUserRepository        (Production)      ││
+│  │   ├── PostgreSQLActivationCodeRepo    (Production)      ││
+│  │   ├── InMemoryUserRepository          (Tests)           ││
+│  │   └── InMemoryActivationCodeRepo      (Tests)           ││
+│  │                                                         ││
+│  │  InfrastructureProvider                                  ││
+│  │   └── EmailClient (Mock/SMTP)                           ││
+│  │                                                         ││
+│  │  ServiceProvider                                        ││
+│  │   └── UserService                                       ││
+│  └─────────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -141,6 +171,31 @@ container = AppContainer(
 - **Testabilité**: Mock facile + implémentations in-memory dédiées
 - **Flexibilité**: Basculement PostgreSQL/Memory via config
 - **Maintenabilité**: Séparation claire des responsabilités
+
+Utilisation type:
+```python
+from src.di import get_container
+
+container = get_container()
+user_service = container.user_service()
+```
+
+Dans les routes FastAPI:
+```python
+from src.api.deps import get_user_service
+
+@router.post("/register")
+def register(req: RegisterRequest, user_service: UserService = Depends(get_user_service)):
+  return user_service.register(req.email, req.password)
+```
+
+En tests:
+```python
+from src.di.container import create_test_container
+
+container = create_test_container()
+svc = container.user_service()
+```
 
 ---
 

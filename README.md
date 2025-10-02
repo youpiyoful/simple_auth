@@ -2,6 +2,12 @@
 
 API d'authentification simple avec workflow d'activation par email.
 
+## 📚 Documentation
+
+- ARCHITECTURE.md: Architecture applicative, Repository Pattern, DI, data model, endpoints, déploiement
+- TESTING.md: Stratégie de tests (unitaires in-memory vs intégration PostgreSQL), commandes, bonnes pratiques
+- VALIDATION.md: Conformité aux exigences du test technique
+
 ## 🎯 Fonctionnalités
 
 - **Inscription** : Créer un compte utilisateur avec email/mot de passe

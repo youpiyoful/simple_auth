@@ -9,7 +9,7 @@
 | **FastAPI Framework** | ✅ **VALIDÉ** | FastAPI 0.100+ avec routes REST | `src/main.py`, `src/api/` |
 | **PostgreSQL Database** | ✅ **VALIDÉ** | PostgreSQL 18 + connexion poolée | `docker-compose.yaml`, `src/persistances/db.py` |
 | **Email + Password Registration** | ✅ **VALIDÉ** | Validation Pydantic + bcrypt hash | `POST /register` endpoint |
-| **4-digit Activation Code** | ✅ **VALIDÉ** | Codes 0000-9999 générés aléatoirement | `src/persistances/repositories/activation_code_repository.py` |
+| **4-digit Activation Code** | ✅ **VALIDÉ** | Codes 0000-9999 générés aléatoirement | `src/persistances/repositories/implementations/*activation_code_repository.py` |
 | **🔥 1 minute expiration** | ✅ **VALIDÉ** | `timedelta(minutes=1)` exact | `src/services/models.py:37` + test spécifique |
 | **Basic Authentication** | ✅ **VALIDÉ** | RFC 7617 compliant avec bcrypt | `src/api/deps.py` |
 | **REST API Endpoints** | ✅ **VALIDÉ** | 4 endpoints complets | `/register`, `/activate`, `/me`, `/health` |
@@ -76,7 +76,7 @@ def __post_init__(self):
 
 ### Test Spécifique Client
 ```python
-# tests/test_simple_auth.py + tests/test_integration.py
+# tests/unit/test_unit.py + tests/integration/test_integration.py
 def test_activation_code_expires_after_one_minute():
     """Test that activation codes expire after exactly 1 minute."""
     # Validation précise à la seconde près
@@ -178,6 +178,8 @@ open http://localhost:8000/docs
 - `src/persistances/repositories/interfaces.py` - Contrats abstraits
 - `tests/` - Suite de tests exhaustive
 - `src/services/models.py:37` - Implémentation expiration 1 minute
-- `docker-compose.dev.yaml` - Infrastructure PostgreSQL complète---
+- `docker-compose.dev.yaml` - Infrastructure PostgreSQL complète
+
+Pour l’architecture détaillée, voir `ARCHITECTURE.md`. Pour la stratégie de tests et les commandes, voir `TESTING.md`.
 
 *✅ Validation complète - Simple Auth API v1.0.0 - Prêt pour évaluation*
