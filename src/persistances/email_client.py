@@ -63,7 +63,8 @@ class SMTPMailer:
             # Create message
             message = MIMEMultipart(_subtype="alternative")
             message["Subject"] = "Activation de votre compte"
-            message["From"] = self.username
+            # Use username as sender, or default for MailHog if username is empty
+            message["From"] = self.username if self.username else "noreply@simpleauth.local"
             message["To"] = to_email
 
             # Create email content
@@ -106,7 +107,7 @@ class SMTPMailer:
                         # If TLS fails (e.g., MailHog), continue without TLS
                         pass
                 # Optional AUTH (MailHog doesn't require auth)
-                if self.username:
+                if self.username and self.password:
                     server.login(user=self.username, password=self.password)
                 server.send_message(msg=message)
 
