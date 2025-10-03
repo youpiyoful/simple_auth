@@ -7,8 +7,14 @@ import sys
 
 import uvicorn
 
-# Ajouter le répertoire src au path Python
+# Add the src directory to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+
+# Install production dependencies
+os.system("pip install -r requirements.txt")
+
+# Install development dependencies
+os.system("pip install -r requirements-dev.txt")
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info", app_dir="src")

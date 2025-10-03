@@ -36,18 +36,39 @@ src/
         └── activation_code_repository.py # Repository codes d'activation
 ```
 
-## 🚀 Démarrage rapide
-
-### 1. Installation des dépendances (runtime)
-
+## 🚀 Démarrage rapide pour tester le projet
+> **⚠️ Note pour les testeurs**
+> Pour tester l'API rapidement, utiliser le fichier docker compose qui contient 3 services :
+> - PostgreSQL
+> - MailHog
+> - API
+>
+### 1. Démarrer l'API avec Docker Compose
 ```bash
-pip install -r requirements.txt
+docker compose up --build -d
 ```
 
-### 2. Lancement du serveur
+
+## 🚀 Démarrage rapide pour développer le projet
+> **⚠️ Note pour les développeurs**
+>
+> Pour démarrer le projet en mode développement local, démarrer manuellement le service postgresql du fichier Docker Compose mais pas l'API. Pour démarrer l'API en mode dev utiliser la commande du makefile, ou lancer la commande de la doc officielle avec uvicorn.
+>
+### 1. Démarrer le service PostgreSQL (Docker compose)
 
 ```bash
-python src/main.py
+docker-compose up -d --build db
+```
+### Bonus mailhog
+Si vous souhaitez tester l'envoi d'e-mails avec une interface web, vous pouvez utiliser MailHog pour intercepter les e-mails envoyés par l'application, sinon ils seront visible dans le terminal. Pour ça il faudra aussi changer les varaibles d'environnement dans le fichier `.env` pour utiliser mailhog comme serveur SMTP (voir `.env.example`).
+```bash
+docker-compose up -d --build mailhog
+```
+
+### 2. Lancement du serveur avec la commande du fichier makefile
+La commande lance un script python qui télécharge les dépendance du projet si besoin et démarre le serveur en mode développement avec rechargement automatique. (autoreload=True)
+```bash
+make dev
 ```
 
 Le serveur démarre sur `http://localhost:8000`
