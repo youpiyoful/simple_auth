@@ -20,58 +20,111 @@ API d'authentification simple avec workflow d'activation par email.
 ```
 src/
 ├── main.py                   # Point d'entrée FastAPI
+├── config/
+│   └── settings.py           # Configuration application (.env, SMTP, DB...)
+├── di/
+│   └── container.py          # Conteneur d'injection de dépendances
 ├── api/
-│   ├── server.py             # Configuration serveur
+│   ├── server.py             # Configuration serveur FastAPI
+│   ├── deps.py               # Dépendances FastAPI (auth, services...)
 │   ├── routes/
-│   │   └── user_routes.py    # Routes d'authentification
-│   └── errors_handler.py     # Gestion des erreurs
+│   │   └── user_routes.py    # Routes RESTful d'authentification
+│   └── errors_handler.py     # Gestion globale des erreurs HTTP
 ├── services/
-│   ├── models.py             # Modèles de données
-│   ├── user_service.py       # Logique métier
-│   └── exceptions.py         # Exceptions personnalisées
+│   ├── models.py             # Modèles de données (User, ActivationCode...)
+│   ├── user_service.py       # Logique métier (inscription, activation, auth)
+│   └── exceptions.py         # Exceptions métier personnalisées
 └── persistances/
-    ├── email_client.py       # Client email (mock pour dev)
+    ├── db.py                 # Gestion des connexions PostgreSQL (pool)
+    ├── email_client.py       # Client email (MockMailer/SMTPMailer)
     └── repositories/
-        ├── user_repository.py           # Repository utilisateurs
-        └── activation_code_repository.py # Repository codes d'activation
+        ├── interfaces.py                    # Abstractions Repository Pattern
+        ├── email_repository.py             # Repository pour emails
+        └── implementations/
+            ├── postgresql_user_repository.py           # Implémentation PostgreSQL users
+            ├── postgresql_activation_code_repository.py # Implémentation PostgreSQL codes
+            └── memory/                                  # Implémentations in-memory (tests)
 ```
 
-## 🚀 Démarrage rapide pour tester le projet
-> **⚠️ Note pour les testeurs**
-> Pour tester l'API rapidement, utiliser le fichier docker compose qui contient 3 services :
-> - PostgreSQL
-> - MailHog
-> - API
->
-### 1. Démarrer l'API avec Docker Compose
+## 🚀 Démarrage
+
+### 🎯 Mode Reviewer (Démarrage complet - Une seule commande)
+
+**Pour tester rapidement l'API complète :**
+
 ```bash
 docker compose up --build -d
 ```
 
+Cette commande démarre automatiquement :
+- **PostgreSQL** (base de données)
+- **MailHog** (serveur SMTP de test avec interface web)
+- **API FastAPI** (serveur principal)
 
-## 🚀 Démarrage rapide pour développer le projet
-> **⚠️ Note pour les développeurs**
->
-> Pour démarrer le projet en mode développement local, démarrer manuellement le service postgresql du fichier Docker Compose mais pas l'API. Pour démarrer l'API en mode dev utiliser la commande du makefile, ou lancer la commande de la doc officielle avec uvicorn.
->
-### 1. Démarrer le service PostgreSQL (Docker compose)
+**Services disponibles :**
+- API : `http://localhost:8000`
+- Documentation : `http://localhost:8000/docs`
+- MailHog (emails) : `http://localhost:8025`
+
+**📧 Configuration des emails :**
+- **Par défaut** : Les codes d'activation s'affichent dans la console du conteneur API
+- **Interface web** : Pour voir les emails dans MailHog (`http://localhost:8025`), décommentez les lignes MailHog dans le fichier `.env` :
 
 ```bash
-docker-compose up -d --build db
+# Décommenter ces lignes dans .env pour utiliser MailHog :
+USE_MOCK_EMAIL=false
+SMTP_HOST=smtp
+SMTP_PORT=1025
+SMTP_USERNAME=
+SMTP_PASSWORD=
+SMTP_USE_TLS=false
 ```
-### Bonus mailhog
-Si vous souhaitez tester l'envoi d'e-mails avec une interface web, vous pouvez utiliser MailHog pour intercepter les e-mails envoyés par l'application, sinon ils seront visible dans le terminal. Pour ça il faudra aussi changer les varaibles d'environnement dans le fichier `.env` pour utiliser mailhog comme serveur SMTP (voir `.env.example`).
+
+### 🛠️ Mode Développeur (API en local + services Docker)
+
+**Pour développer avec hot-reload, débogage et linter :**
+
+#### 1. Démarrer les services externes
 ```bash
-docker-compose up -d --build mailhog
+# PostgreSQL (obligatoire)
+docker-compose up -d db
+
+# MailHog (optionnel - pour tester les emails avec interface web)
+docker-compose up -d smtp
 ```
 
-### 2. Lancement du serveur avec la commande du fichier makefile
-La commande lance un script python qui télécharge les dépendance du projet si besoin et démarre le serveur en mode développement avec rechargement automatique. (autoreload=True)
+#### 2. Démarrer l'API en mode développement
+
+**⚠️ Important** : Activer l'environnement virtuel d'abord, sinon le script affichera une erreur.
+
 ```bash
+# Méthode 1 : Avec Makefile (recommandé)
 make dev
+
+# Méthode 2 : Script direct (installe automatiquement les dépendances)
+source venv/bin/activate  # Obligatoire !
+python run_server.py
+
+# Méthode 3 : Uvicorn manuel
+source venv/bin/activate
+pip install -r requirements.txt && pip install -r requirements-dev.txt
+uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Le serveur démarre sur `http://localhost:8000`
+**💡 Le script `run_server.py` :**
+- Vérifie automatiquement que l'environnement virtuel est activé
+- Installe les dépendances automatiquement (`requirements.txt` + `requirements-dev.txt`)
+- Lance l'API avec hot-reload activé
+
+**Avantages du mode développeur :**
+- ✅ Hot-reload automatique sur les changements de code
+- ✅ Debugging facilité
+- ✅ Logs détaillés dans le terminal
+- ✅ Possibilité d'utiliser un IDE/debugger
+
+**Configuration email en mode dev :**
+- Par défaut : codes affichés dans la console
+- Avec MailHog : interface web sur `http://localhost:8025`
 
 ### 3. Documentation API
 
@@ -151,9 +204,11 @@ curl -X GET "http://localhost:8000/api/v1/users/me" \
 
 > Note importante sur les fichiers d'environnement
 >
-> - Le fichier `.env` n'est **pas** versionné. À la place, on fournit **`.env.example`** avec des valeurs de démonstration.
-> - Pour faciliter les tests reviewers: le **Dockerfile copie `.env.example` vers `.env`** automatiquement si `.env` est absent. Ainsi `docker compose up` fonctionne out‑of‑the‑box.
-> - En local hors Docker: crée ton `.env` avec `cp .env.example .env` et personnalise si besoin.
+> - Le fichier `.env` **n'est pas versionné** (dans `.gitignore`), conformément aux bonnes pratiques.
+> - Un fichier `.env.example` est fourni avec des valeurs de démonstration.
+> - **Facilité pour reviewers** : Docker Compose copie automatiquement `.env.example` vers `.env` s'il est absent.
+> - Ainsi `docker compose up --build -d` fonctionne out-of-the-box sans étape manuelle.
+> - ⚠️ **Cette auto-copie est une facilité de test, PAS une pratique de production.**
 
 ### Email (Développement)
 

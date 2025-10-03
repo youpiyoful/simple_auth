@@ -10,6 +10,8 @@ services:
       - "8000:8000"                   # Expose API on port 8000
     environment:
       DB_HOST: db                     # Force Docker network hostname for Postgres
+    # Create .env from .env.example if missing (reviewer convenience - NOT for production)
+    command: sh -c "[ ! -f .env ] && cp .env.example .env || true; uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload"
     env_file: .env                    # Load environment variables from .env file
     depends_on:
       db:

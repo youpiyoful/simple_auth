@@ -10,6 +10,15 @@ import uvicorn
 # Add the src directory to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
+# Check if virtual environment is activated
+if not hasattr(sys, "real_prefix") and not (
+    hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix
+):
+    print(
+        "Erreur: Environnement virtuel non activé. Veuillez activer votre environnement virtuel avant d'exécuter ce script."
+    )
+    sys.exit(1)
+
 # Install production dependencies
 os.system("pip install -r requirements.txt")
 
