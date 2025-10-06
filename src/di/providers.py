@@ -94,21 +94,20 @@ class InfrastructureProvider:
         """Factory for email client."""
         if self._use_mock_email:
             return MockMailer()
-        else:
-            # SMTP configuration via settings (allows using MailHog or real SMTP)
-            settings: AppSettings = get_settings()
-            smtp: SMTPSettings | None = settings.smtp_settings
-            if smtp is None:
-                raise ValueError(
-                    "SMTP settings are not configured. Please provide smtp_settings in AppSettings or enable mock email (use_mock_email=True)."
-                )
-            return SMTPMailer(
-                smtp_server=smtp.server,
-                smtp_port=smtp.port,
-                username=smtp.username,
-                password=smtp.password,
-                use_tls=smtp.use_tls,
+        # SMTP configuration via settings (allows using MailHog or real SMTP)
+        settings: AppSettings = get_settings()
+        smtp: SMTPSettings | None = settings.smtp_settings
+        if smtp is None:
+            raise ValueError(
+                "SMTP settings are not configured. Please provide smtp_settings in AppSettings or enable mock email (use_mock_email=True)."
             )
+        return SMTPMailer(
+            smtp_server=smtp.server,
+            smtp_port=smtp.port,
+            username=smtp.username,
+            password=smtp.password,
+            use_tls=smtp.use_tls,
+        )
 
     def get_email_client(self) -> EmailClientInterface:
         """Get email client instance."""
