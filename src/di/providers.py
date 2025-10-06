@@ -99,13 +99,8 @@ class InfrastructureProvider:
             settings: AppSettings = get_settings()
             smtp: SMTPSettings | None = settings.smtp_settings
             if smtp is None:
-                # Fallback sensible if settings not provided
-                return SMTPMailer(
-                    smtp_server="smtp.gmail.com",
-                    smtp_port=587,
-                    username="",
-                    password="",
-                    use_tls=True,
+                raise ValueError(
+                    "SMTP settings are not configured. Please provide smtp_settings in AppSettings or enable mock email (use_mock_email=True)."
                 )
             return SMTPMailer(
                 smtp_server=smtp.server,
