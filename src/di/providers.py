@@ -5,7 +5,7 @@ from typing import Generic, TypeVar
 
 # Infrastructure imports
 from src.config.settings import AppSettings, SMTPSettings, get_settings
-from src.persistances.email_client import MockMailer, SMTPMailer
+from src.persistances.email_client import EmailClientInterface, MockMailer, SMTPMailer
 
 # Repository implementations
 from src.persistances.repositories.implementations import (
@@ -90,7 +90,7 @@ class InfrastructureProvider:
         self._use_mock_email: bool = use_mock_email
         self._email_client = SingletonProvider(self._create_email_client)
 
-    def _create_email_client(self) -> MockMailer | SMTPMailer:
+    def _create_email_client(self) -> EmailClientInterface:
         """Factory for email client."""
         if self._use_mock_email:
             return MockMailer()
@@ -115,7 +115,7 @@ class InfrastructureProvider:
                 use_tls=smtp.use_tls,
             )
 
-    def get_email_client(self):
+    def get_email_client(self) -> EmailClientInterface:
         """Get email client instance."""
         return self._email_client.provide()
 
