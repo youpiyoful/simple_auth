@@ -98,12 +98,9 @@ def activate_user(
         # Note: user_id is in path but service uses code-based lookup
         user_service.activate_account(activation_code=request.activation_code)
         return MessageResponse(message="Account activated successfully.")
-    except InvalidActivationCode as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    except ActivationCodeExpired as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    except UserNotFound as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    except (InvalidActivationCode, ActivationCodeExpired, UserNotFound):
+        # Security: Always return same generic message to prevent user enumeration
+        raise HTTPException(status_code=400, detail="Invalid or expired activation code.")
 
 
 # POST /api/v1/users/{id}/codes - Generate or resend activation code
@@ -116,13 +113,15 @@ def generate_or_resend_code(
     """Generate or resend activation code to user email."""
     try:
         # RESTful: user_id in path, email in body for service compatibility
-        success = user_service.resend_activation_code(email=request.email)
-        if success:
-            return MessageResponse(message="Activation code sent to your email.")
-        else:
-            return MessageResponse(message="Account already activated.")
-    except UserNotFound as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+        user_service.resend_activation_code(email=request.email)
+    except UserNotFound:
+        # Security: Silently ignore if user doesn't exist
+        pass
+
+    # Security: Always return same generic message to prevent user enumeration
+    return MessageResponse(
+        message="If the email exists and account is not activated, an activation code has been sent."
+    )
 
 
 # GET /api/v1/users/me - Get current user profile
