@@ -275,7 +275,7 @@ pip install -r requirements-test.txt
 # Trier les imports
 isort .
 
-# Formater le code
+# Formater le code selon la config
 black .
 ```
 
